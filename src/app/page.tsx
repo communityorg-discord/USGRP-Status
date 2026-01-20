@@ -80,14 +80,22 @@ export default function StatusPage() {
         }
     };
 
-    // Generate 90 days of uptime data for display
-    const uptimeDays = Array.from({ length: 90 }, (_, i) => {
-        const rand = Math.random();
-        if (rand > 0.98) return 'major';
-        if (rand > 0.95) return 'partial';
-        if (rand > 0.92) return 'degraded';
-        return 'operational';
-    });
+    // Generate uptime data client-side only to avoid hydration mismatch
+    const [uptimeDays, setUptimeDays] = useState<string[]>([]);
+    const [lastUpdated, setLastUpdated] = useState<string>('');
+
+    useEffect(() => {
+        // Generate 90 days of uptime data
+        const days = Array.from({ length: 90 }, () => {
+            const rand = Math.random();
+            if (rand > 0.98) return 'major';
+            if (rand > 0.95) return 'partial';
+            if (rand > 0.92) return 'degraded';
+            return 'operational';
+        });
+        setUptimeDays(days);
+        setLastUpdated(new Date().toLocaleString());
+    }, []);
 
     return (
         <div className="page-container">
@@ -100,7 +108,7 @@ export default function StatusPage() {
                     {overallStatus === 'degraded' && '⚠ Some Systems Degraded'}
                     {overallStatus === 'major' && '✕ Major System Outage'}
                 </h2>
-                <p>Last updated: {new Date().toLocaleString()}</p>
+                <p>Last updated: {lastUpdated || 'Loading...'}</p>
             </div>
 
             <main className="main-content">
