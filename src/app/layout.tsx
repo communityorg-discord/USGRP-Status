@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
     title: "USGRP Status",
     description: "System status, changelogs, and community feedback portal",
+    icons: {
+        icon: "/favicon.svg",
+    },
 };
 
 export default function RootLayout({
