@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 
 interface Suggestion {
     id: string;
+    suggestion_id: string;
     title: string;
     description: string;
     type: 'feature' | 'bug';
@@ -13,59 +14,38 @@ interface Suggestion {
     status: 'pending' | 'approved' | 'in-progress' | 'completed' | 'rejected';
     upvotes: number;
     downvotes: number;
-    author: string;
-    createdAt: string;
-    adminResponse?: string;
+    user_tag: string;
+    created_at: string;
+    admin_response?: string;
 }
 
 export default function SuggestionsPage() {
-    const [suggestions, setSuggestions] = useState<Suggestion[]>([
-        {
-            id: '1',
-            title: 'Add bulk case management',
-            description: 'Ability to void/restore multiple cases at once would save time for admins.',
-            type: 'feature',
-            status: 'approved',
-            upvotes: 12,
-            downvotes: 1,
-            author: 'User#1234',
-            createdAt: '2026-01-18',
-        },
-        {
-            id: '2',
-            title: 'Mobile-friendly dashboard',
-            description: 'The admin dashboard is hard to use on mobile devices. Would be great to have responsive design.',
-            type: 'feature',
-            status: 'in-progress',
-            upvotes: 25,
-            downvotes: 0,
-            author: 'User#5678',
-            createdAt: '2026-01-15',
-            adminResponse: 'We are currently working on this! Expected in v2.6.0',
-        },
-        {
-            id: '3',
-            title: 'DM notifications not working',
-            description: 'I\'m not receiving DM notifications for case updates even though I have DMs enabled.',
-            type: 'bug',
-            severity: 'medium',
-            status: 'completed',
-            upvotes: 8,
-            downvotes: 0,
-            author: 'User#9012',
-            createdAt: '2026-01-10',
-            adminResponse: 'Fixed in v2.5.1',
-        },
-    ]);
-
+    const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
     const [filter, setFilter] = useState<string>('all');
     const [typeFilter, setTypeFilter] = useState<string>('all');
+    const [loading, setLoading] = useState(true);
 
-    const filteredSuggestions = suggestions.filter(s => {
-        if (filter !== 'all' && s.status !== filter) return false;
-        if (typeFilter !== 'all' && s.type !== typeFilter) return false;
-        return true;
-    });
+    useEffect(() => {
+        fetchSuggestions();
+    }, [filter, typeFilter]);
+
+    const fetchSuggestions = async () => {
+        setLoading(true);
+        try {
+            let url = '/api/suggestions?';
+            if (typeFilter !== 'all') url += `type=${typeFilter}&`;
+            if (filter !== 'all') url += `status=${filter}`;
+
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                setSuggestions(data.suggestions || []);
+            }
+        } catch (e) {
+            console.error('Failed to fetch suggestions:', e);
+        }
+        setLoading(false);
+    };
 
     const getStatusBadgeClass = (status: string) => {
         switch (status) {
@@ -85,7 +65,6 @@ export default function SuggestionsPage() {
             <main className="main-content">
                 <div className="section-header" style={{ marginBottom: '24px' }}>
                     <h1 className="section-title">Suggestions & Bug Reports</h1>
-                    <button className="btn btn-primary">+ Submit Suggestion</button>
                 </div>
 
                 {/* Filters */}
@@ -123,63 +102,77 @@ export default function SuggestionsPage() {
                     </div>
                 </div>
 
+                {/* Loading */}
+                {loading && (
+                    <div className="card">
+                        <div className="empty-state">
+                            <p>Loading suggestions...</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Suggestions List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {filteredSuggestions.map((sug) => (
-                        <div key={sug.id} className="card">
-                            <div style={{ padding: '20px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                            <span style={{ fontSize: '16px' }}>{sug.type === 'feature' ? '✨' : '🐛'}</span>
-                                            <h3 style={{ fontSize: '16px', fontWeight: 600 }}>{sug.title}</h3>
+                {!loading && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {suggestions.map((sug) => (
+                            <div key={sug.id} className="card">
+                                <div style={{ padding: '20px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '16px' }}>{sug.type === 'feature' ? '✨' : '🐛'}</span>
+                                                <h3 style={{ fontSize: '16px', fontWeight: 600 }}>{sug.title}</h3>
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                                by {sug.user_tag || 'Anonymous'} • {new Date(sug.created_at).toLocaleDateString()}
+                                                {sug.severity && (
+                                                    <span style={{ marginLeft: '8px', color: sug.severity === 'critical' ? 'var(--status-major)' : 'var(--text-secondary)' }}>
+                                                        • Severity: {sug.severity}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                            by {sug.author} • {new Date(sug.createdAt).toLocaleDateString()}
-                                            {sug.severity && (
-                                                <span style={{ marginLeft: '8px', color: sug.severity === 'critical' ? 'var(--status-major)' : 'var(--text-secondary)' }}>
-                                                    • Severity: {sug.severity}
-                                                </span>
-                                            )}
+                                        <span className={getStatusBadgeClass(sug.status)}>
+                                            {sug.status.replace('-', ' ')}
+                                        </span>
+                                    </div>
+                                    <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{sug.description}</p>
+
+                                    {sug.admin_response && (
+                                        <div style={{
+                                            background: 'var(--bg-tertiary)',
+                                            borderLeft: '3px solid var(--gov-gold)',
+                                            padding: '12px 16px',
+                                            borderRadius: '4px',
+                                            marginBottom: '16px'
+                                        }}>
+                                            <div style={{ fontSize: '11px', color: 'var(--gov-gold)', marginBottom: '4px', fontWeight: 600 }}>ADMIN RESPONSE</div>
+                                            <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{sug.admin_response}</div>
                                         </div>
-                                    </div>
-                                    <span className={getStatusBadgeClass(sug.status)}>
-                                        {sug.status.replace('-', ' ')}
-                                    </span>
-                                </div>
-                                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{sug.description}</p>
+                                    )}
 
-                                {sug.adminResponse && (
-                                    <div style={{
-                                        background: 'var(--bg-tertiary)',
-                                        borderLeft: '3px solid var(--gov-gold)',
-                                        padding: '12px 16px',
-                                        borderRadius: '4px',
-                                        marginBottom: '16px'
-                                    }}>
-                                        <div style={{ fontSize: '11px', color: 'var(--gov-gold)', marginBottom: '4px', fontWeight: 600 }}>ADMIN RESPONSE</div>
-                                        <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{sug.adminResponse}</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                        <span className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'default' }}>
+                                            <span>👍</span> {sug.upvotes}
+                                        </span>
+                                        <span className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'default' }}>
+                                            <span>👎</span> {sug.downvotes}
+                                        </span>
                                     </div>
-                                )}
-
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span>👍</span> {sug.upvotes}
-                                    </button>
-                                    <button className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span>👎</span> {sug.downvotes}
-                                    </button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
 
-                {filteredSuggestions.length === 0 && (
+                {!loading && suggestions.length === 0 && (
                     <div className="card">
                         <div className="empty-state">
                             <div className="empty-state-icon">💡</div>
-                            <p>No suggestions found matching your filters</p>
+                            <p>No suggestions found</p>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                Use /suggest in Discord to submit a suggestion!
+                            </p>
                         </div>
                     </div>
                 )}

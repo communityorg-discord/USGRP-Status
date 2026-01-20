@@ -9,7 +9,7 @@ interface Changelog {
     system: string;
     version: string;
     title: string;
-    date: string;
+    created_at: string;
     changes: {
         added?: string[];
         changed?: string[];
@@ -20,57 +20,32 @@ interface Changelog {
 }
 
 export default function ChangelogsPage() {
-    const [changelogs, setChangelogs] = useState<Changelog[]>([
-        {
-            id: '1',
-            system: 'Gov Utils Bot',
-            version: 'v2.5.0',
-            title: 'Permission System Overhaul',
-            date: '2026-01-20',
-            changes: {
-                added: [
-                    'Advanced permission grants system',
-                    'Command request/approval workflow',
-                    'Staff dashboard API integration',
-                ],
-                changed: [
-                    'Improved case management commands',
-                    'Updated moderation action logging',
-                ],
-                fixed: [
-                    'Fixed DM delivery for grant notifications',
-                    'Resolved role hierarchy checks',
-                ],
-            },
-        },
-        {
-            id: '2',
-            system: 'Economy Bot',
-            version: 'v3.2.0',
-            title: 'Crime & Police Update',
-            date: '2026-01-18',
-            changes: {
-                added: [
-                    'Secret Service protection system',
-                    'Gun license management',
-                    'Federal Reserve daily stats',
-                ],
-                fixed: [
-                    'Fixed food consumption stat updates',
-                    'Corrected payday loan APR calculations',
-                ],
-            },
-        },
-    ]);
-
+    const [changelogs, setChangelogs] = useState<Changelog[]>([]);
     const [filter, setFilter] = useState<string>('all');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    const systems = ['all', 'Gov Utils Bot', 'Economy Bot', 'Admin Dashboard', 'Webmail'];
+    const systems = ['all', 'Gov Utils Bot', 'Economy Bot', 'Admin Dashboard', 'Webmail', 'Status Portal'];
 
-    const filteredChangelogs = filter === 'all'
-        ? changelogs
-        : changelogs.filter(c => c.system === filter);
+    useEffect(() => {
+        fetchChangelogs();
+    }, [filter]);
+
+    const fetchChangelogs = async () => {
+        setLoading(true);
+        try {
+            const url = filter === 'all'
+                ? '/api/changelogs'
+                : `/api/changelogs?system=${encodeURIComponent(filter)}`;
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                setChangelogs(data.changelogs || []);
+            }
+        } catch (e) {
+            console.error('Failed to fetch changelogs:', e);
+        }
+        setLoading(false);
+    };
 
     return (
         <div className="page-container">
@@ -96,81 +71,92 @@ export default function ChangelogsPage() {
                     </div>
                 </div>
 
-                {/* Changelog List */}
-                <div className="changelog-list">
-                    {filteredChangelogs.map((log) => (
-                        <div key={log.id} className="changelog-entry">
-                            <div className="changelog-header">
-                                <div className="changelog-version">
-                                    <span className="version-badge">{log.version}</span>
-                                    <span className="changelog-title">{log.title}</span>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{log.system}</div>
-                                    <div className="changelog-date">{new Date(log.date).toLocaleDateString()}</div>
-                                </div>
-                            </div>
-                            <div className="changelog-content">
-                                {log.changes.added && log.changes.added.length > 0 && (
-                                    <div className="change-category">
-                                        <div className="category-label added">✓ Added</div>
-                                        <ul className="change-list">
-                                            {log.changes.added.map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                                {log.changes.changed && log.changes.changed.length > 0 && (
-                                    <div className="change-category">
-                                        <div className="category-label changed">◐ Changed</div>
-                                        <ul className="change-list">
-                                            {log.changes.changed.map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                                {log.changes.fixed && log.changes.fixed.length > 0 && (
-                                    <div className="change-category">
-                                        <div className="category-label fixed">🔧 Fixed</div>
-                                        <ul className="change-list">
-                                            {log.changes.fixed.map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                                {log.changes.removed && log.changes.removed.length > 0 && (
-                                    <div className="change-category">
-                                        <div className="category-label removed">✕ Removed</div>
-                                        <ul className="change-list">
-                                            {log.changes.removed.map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                                {log.changes.security && log.changes.security.length > 0 && (
-                                    <div className="change-category">
-                                        <div className="category-label security">🔒 Security</div>
-                                        <ul className="change-list">
-                                            {log.changes.security.map((item, i) => (
-                                                <li key={i}>{item}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
+                {/* Loading State */}
+                {loading && (
+                    <div className="card">
+                        <div className="empty-state">
+                            <p>Loading changelogs...</p>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                )}
 
-                {filteredChangelogs.length === 0 && (
+                {/* Changelog List */}
+                {!loading && (
+                    <div className="changelog-list">
+                        {changelogs.map((log) => (
+                            <div key={log.id} className="changelog-entry">
+                                <div className="changelog-header">
+                                    <div className="changelog-version">
+                                        <span className="version-badge">{log.version}</span>
+                                        <span className="changelog-title">{log.title}</span>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{log.system}</div>
+                                        <div className="changelog-date">{new Date(log.created_at).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                                <div className="changelog-content">
+                                    {log.changes.added && log.changes.added.length > 0 && (
+                                        <div className="change-category">
+                                            <div className="category-label added">✓ Added</div>
+                                            <ul className="change-list">
+                                                {log.changes.added.map((item, i) => (
+                                                    <li key={i}>{item}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {log.changes.changed && log.changes.changed.length > 0 && (
+                                        <div className="change-category">
+                                            <div className="category-label changed">◐ Changed</div>
+                                            <ul className="change-list">
+                                                {log.changes.changed.map((item, i) => (
+                                                    <li key={i}>{item}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {log.changes.fixed && log.changes.fixed.length > 0 && (
+                                        <div className="change-category">
+                                            <div className="category-label fixed">🔧 Fixed</div>
+                                            <ul className="change-list">
+                                                {log.changes.fixed.map((item, i) => (
+                                                    <li key={i}>{item}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {log.changes.removed && log.changes.removed.length > 0 && (
+                                        <div className="change-category">
+                                            <div className="category-label removed">✕ Removed</div>
+                                            <ul className="change-list">
+                                                {log.changes.removed.map((item, i) => (
+                                                    <li key={i}>{item}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {log.changes.security && log.changes.security.length > 0 && (
+                                        <div className="change-category">
+                                            <div className="category-label security">🔒 Security</div>
+                                            <ul className="change-list">
+                                                {log.changes.security.map((item, i) => (
+                                                    <li key={i}>{item}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {!loading && changelogs.length === 0 && (
                     <div className="card">
                         <div className="empty-state">
                             <div className="empty-state-icon">📋</div>
-                            <p>No changelogs found for this system</p>
+                            <p>No changelogs found</p>
                         </div>
                     </div>
                 )}

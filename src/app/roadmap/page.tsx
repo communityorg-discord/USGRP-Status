@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -14,19 +15,27 @@ interface RoadmapItem {
 }
 
 export default function RoadmapPage() {
-    const roadmapItems: RoadmapItem[] = [
-        // Q1 2026
-        { id: '1', title: 'Status Portal Launch', description: 'Public status page with incident management', system: 'Infrastructure', status: 'in-progress', quarter: 'Q1 2026', progress: 70 },
-        { id: '2', title: 'Mobile Dashboard', description: 'Responsive admin dashboard for mobile devices', system: 'Admin Dashboard', status: 'planned', quarter: 'Q1 2026', progress: 0 },
-        { id: '3', title: 'Advanced Permission System', description: 'Granular permission grants and request workflow', system: 'Gov Utils Bot', status: 'completed', quarter: 'Q1 2026', progress: 100 },
+    const [roadmapItems, setRoadmapItems] = useState<RoadmapItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
-        // Q2 2026
-        { id: '4', title: 'Audit Log Search', description: 'Advanced search and filtering for audit logs', system: 'Gov Utils Bot', status: 'planned', quarter: 'Q2 2026', progress: 0 },
-        { id: '5', title: 'Economy Dashboard', description: 'Web dashboard for economy management', system: 'Economy Bot', status: 'planned', quarter: 'Q2 2026', progress: 0 },
-        { id: '6', title: 'API v2', description: 'Public API with authentication for third-party integrations', system: 'Infrastructure', status: 'planned', quarter: 'Q2 2026', progress: 0 },
-    ];
+    useEffect(() => {
+        fetchRoadmap();
+    }, []);
 
-    const quarters = [...new Set(roadmapItems.map(i => i.quarter))];
+    const fetchRoadmap = async () => {
+        try {
+            const res = await fetch('/api/roadmap');
+            if (res.ok) {
+                const data = await res.json();
+                setRoadmapItems(data.items || []);
+            }
+        } catch (e) {
+            console.error('Failed to fetch roadmap:', e);
+        }
+        setLoading(false);
+    };
+
+    const quarters = [...new Set(roadmapItems.map(i => i.quarter))].sort();
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -67,8 +76,17 @@ export default function RoadmapPage() {
                     </div>
                 </div>
 
+                {/* Loading */}
+                {loading && (
+                    <div className="card">
+                        <div className="empty-state">
+                            <p>Loading roadmap...</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Roadmap by Quarter */}
-                {quarters.map((quarter) => (
+                {!loading && quarters.map((quarter) => (
                     <div key={quarter} style={{ marginBottom: '40px' }}>
                         <h2 style={{
                             fontSize: '20px',
@@ -105,15 +123,17 @@ export default function RoadmapPage() {
                                                     background: getStatusColor(item.status)
                                                 }}></span>
                                                 <h3 style={{ fontSize: '15px', fontWeight: 600 }}>{item.title}</h3>
-                                                <span style={{
-                                                    fontSize: '11px',
-                                                    padding: '2px 8px',
-                                                    background: 'var(--bg-tertiary)',
-                                                    borderRadius: '12px',
-                                                    color: 'var(--text-muted)'
-                                                }}>
-                                                    {item.system}
-                                                </span>
+                                                {item.system && (
+                                                    <span style={{
+                                                        fontSize: '11px',
+                                                        padding: '2px 8px',
+                                                        background: 'var(--bg-tertiary)',
+                                                        borderRadius: '12px',
+                                                        color: 'var(--text-muted)'
+                                                    }}>
+                                                        {item.system}
+                                                    </span>
+                                                )}
                                             </div>
                                             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginLeft: '22px' }}>
                                                 {item.description}
@@ -155,6 +175,15 @@ export default function RoadmapPage() {
                         </div>
                     </div>
                 ))}
+
+                {!loading && roadmapItems.length === 0 && (
+                    <div className="card">
+                        <div className="empty-state">
+                            <div className="empty-state-icon">🗺️</div>
+                            <p>No roadmap items yet</p>
+                        </div>
+                    </div>
+                )}
             </main>
 
             <Footer />
