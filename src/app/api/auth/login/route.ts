@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 const BOT_API_URL = process.env.BOT_API_URL || 'http://localhost:3003';
+const API_KEY = process.env.BOT_API_KEY || 'usgrp-admin-2026-secure-key-x7k9m2p4';
 
 export async function POST(request: Request) {
     try {
@@ -13,9 +14,12 @@ export async function POST(request: Request) {
         }
 
         // Authenticate via bot API
-        const authRes = await fetch(`${BOT_API_URL}/api/staff/login`, {
+        const authRes = await fetch(`${BOT_API_URL}/api/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-admin-key': API_KEY
+            },
             body: JSON.stringify({ email, password }),
         });
 
