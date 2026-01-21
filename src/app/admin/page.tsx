@@ -132,48 +132,6 @@ export default function AdminPage() {
                         <span>🔑</span> Sign in with USGRP Auth
                     </button>
 
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '16px',
-                        color: 'var(--text-muted)',
-                        fontSize: '12px'
-                    }}>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--border-default)' }} />
-                        <span>or use email</span>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--border-default)' }} />
-                    </div>
-
-                    <form onSubmit={handleLogin}>
-                        <div className="form-group">
-                            <label className="form-label">Email</label>
-                            <input
-                                type="email"
-                                className="form-input"
-                                placeholder="you@usgrp.xyz"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Password</label>
-                            <input
-                                type="password"
-                                className="form-input"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        <button type="submit" className="btn btn-secondary" style={{ width: '100%' }} disabled={loading}>
-                            {loading ? 'Signing in...' : 'Sign In with Email'}
-                        </button>
-                    </form>
-
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '24px' }}>
                         Only Bot Developers and Admins have access to this portal
                     </p>
