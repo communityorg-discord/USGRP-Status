@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+const AUTH_URL = 'https://auth.usgrp.xyz';
+
 export default function AdminPage() {
     const router = useRouter();
     const [email, setEmail] = useState('');
@@ -14,6 +16,13 @@ export default function AdminPage() {
 
     useEffect(() => {
         checkSession();
+
+        // Check URL for error params
+        const params = new URLSearchParams(window.location.search);
+        const errorParam = params.get('error');
+        if (errorParam) {
+            setError(errorParam);
+        }
     }, []);
 
     const checkSession = async () => {
@@ -29,6 +38,11 @@ export default function AdminPage() {
         } catch {
             // Not authenticated
         }
+    };
+
+    const handleSSOLogin = () => {
+        const returnUrl = 'https://status.usgrp.xyz';
+        window.location.href = `${AUTH_URL}/login?return=${encodeURIComponent(returnUrl)}`;
     };
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -88,6 +102,49 @@ export default function AdminPage() {
                         </p>
                     </div>
 
+                    {error && (
+                        <div style={{
+                            padding: '12px',
+                            background: 'rgba(248, 81, 73, 0.1)',
+                            border: '1px solid rgba(248, 81, 73, 0.3)',
+                            borderRadius: '6px',
+                            color: 'var(--status-major)',
+                            fontSize: '13px',
+                            marginBottom: '16px'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
+                    {/* SSO Login Button */}
+                    <button
+                        onClick={handleSSOLogin}
+                        className="btn btn-primary"
+                        style={{
+                            width: '100%',
+                            marginBottom: '16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
+                        }}
+                    >
+                        <span>🔑</span> Sign in with USGRP Auth
+                    </button>
+
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        marginBottom: '16px',
+                        color: 'var(--text-muted)',
+                        fontSize: '12px'
+                    }}>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--border-default)' }} />
+                        <span>or use email</span>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--border-default)' }} />
+                    </div>
+
                     <form onSubmit={handleLogin}>
                         <div className="form-group">
                             <label className="form-label">Email</label>
@@ -112,22 +169,8 @@ export default function AdminPage() {
                             />
                         </div>
 
-                        {error && (
-                            <div style={{
-                                padding: '12px',
-                                background: 'rgba(248, 81, 73, 0.1)',
-                                border: '1px solid rgba(248, 81, 73, 0.3)',
-                                borderRadius: '6px',
-                                color: 'var(--status-major)',
-                                fontSize: '13px',
-                                marginBottom: '16px'
-                            }}>
-                                {error}
-                            </div>
-                        )}
-
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-                            {loading ? 'Signing in...' : 'Sign In'}
+                        <button type="submit" className="btn btn-secondary" style={{ width: '100%' }} disabled={loading}>
+                            {loading ? 'Signing in...' : 'Sign In with Email'}
                         </button>
                     </form>
 
